@@ -2,6 +2,7 @@ using Alura.CoisasAFazer.Core.Commands;
 using Alura.CoisasAFazer.Core.Models;
 using Alura.CoisasAFazer.Infrastructure;
 using Alura.CoisasAFazer.Services.Handlers;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
 using Xunit;
@@ -16,7 +17,12 @@ namespace Shindi.CoisasAFaz.Testes
             // Arrange
             var comando = new CadastraTarefa("Fazer alguma coisa", new Categoria("Estudo"), new DateTime(2019, 07, 21));
 
-            var repositorio = new RepositorioFake();
+            var options = new DbContextOptionsBuilder<DbTarefasContext>()
+                .UseInMemoryDatabase("DbTarefaContext")
+                .Options;
+
+            var contexto = new DbTarefasContext(options);
+            var repositorio = new RepositorioTarefa(contexto);
             var handler = new CadastraTarefaHandler(repositorio);
 
             // Act
