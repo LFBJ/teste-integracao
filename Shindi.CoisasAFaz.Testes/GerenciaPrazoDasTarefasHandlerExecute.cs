@@ -3,6 +3,7 @@ using Alura.CoisasAFazer.Core.Models;
 using Alura.CoisasAFazer.Infrastructure;
 using Alura.CoisasAFazer.Services.Handlers;
 using Microsoft.EntityFrameworkCore;
+using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -56,6 +57,48 @@ namespace Shindi.CoisasAFaz.Testes
             //assert
             var tarefasEmAtraso = repo.ObtemTarefas(t => t.Status == StatusTarefa.EmAtraso);
             Assert.Equal(5, tarefasEmAtraso.Count());
+        }
+
+        // Foi criado esse teste para verificar se a atualização é feita com apenas um request
+        [Fact]
+        public void QuandoInvocadoDeveChamarAtualizarTarefasSomenteUmaVez()
+        {
+            // Arrange
+            var categoria = new Categoria("Categoria teste");
+            var tarefas = new List<Tarefa>
+            {
+                new Tarefa()
+                { 
+                    Categoria = categoria, 
+                    Titulo="ToDo", 
+                    ConcluidaEm= DateTime.Now,
+                    Prazo=new DateTime(2019,9,21)
+                },
+                new Tarefa()
+                {
+                    Categoria = categoria,
+                    Titulo="Do",
+                    ConcluidaEm= DateTime.Now,
+                    Prazo=new DateTime(2019,7,21)
+                }
+            };
+
+            var mock = new Mock<IRepositorioTarefas>();
+            mock.Setup(r => r.ObtemTarefas(It.IsAny<Func<Tarefa, bool>>())).Returns(tarefas);
+
+            var repo = mock.Object;
+
+            var comando = new GerenciaPrazoDasTarefas(new DateTime(2019,1,1));
+            var handler = new GerenciaPrazoDasTarefasHandler(repo);
+
+            //act
+            handler.Execute(comando);
+
+            //assert
+            // Pode ser feito dessa forma também
+            //mock.Verify(r => r.AtualizarTarefas(It.IsAny<Tarefa[]>()), Times.Exactly(1));
+            mock.Verify(r => r.AtualizarTarefas(It.IsAny<Tarefa[]>()), Times.Once());
+
         }
     }
 }
