@@ -1,6 +1,5 @@
-# EstudoTesteIntegracao
-
 # Dublês para testes:
+
 # Dummy Object: 
 Um objeto que é necessário para execução de algum processo, porém ele não interfere no teste em si
 
