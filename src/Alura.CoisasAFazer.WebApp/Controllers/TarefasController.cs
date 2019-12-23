@@ -4,6 +4,7 @@ using Alura.CoisasAFazer.Core.Commands;
 using Alura.CoisasAFazer.Services.Handlers;
 using Alura.CoisasAFazer.Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Alura.CoisasAFazer.WebApp.Controllers
 {
@@ -11,24 +12,35 @@ namespace Alura.CoisasAFazer.WebApp.Controllers
     [ApiController]
     public class TarefasController : ControllerBase
     {
+        public IRepositorioTarefas _repo;
+        public ILogger<CadastraTarefaHandler> _logger;
+
+        public TarefasController(IRepositorioTarefas repositorio, ILogger<CadastraTarefaHandler> logger)
+        {
+            _repo = repositorio;
+            _logger = logger;
+        }
+
         [HttpPost]
         public IActionResult EndpointCadastraTarefa(CadastraTarefaVM model)
         {
             var cmdObtemCateg = new ObtemCategoriaPorId(model.IdCategoria);
 
-            var contexto = new DbTarefasContext();
-            var repositorio = new RepositorioTarefa(contexto);
-
-            var categoria = new ObtemCategoriaPorIdHandler(repositorio).Execute(cmdObtemCateg);
+            var categoria = new ObtemCategoriaPorIdHandler(_repo).Execute(cmdObtemCateg);
             if (categoria == null)
             {
                 return NotFound("Categoria não encontrada");
             }
 
             var comando = new CadastraTarefa(model.Titulo, categoria, model.Prazo);
-            var handler = new CadastraTarefaHandler(repositorio);
-            handler.Execute(comando);
-            return Ok();
+
+            var handler = new CadastraTarefaHandler(_repo, _logger);
+            var retorno = handler.Execute(comando);
+
+            if (retorno.IsSuccess)
+                return Ok();
+            else
+                return new StatusCodeResult(500);
         }
     }
 }
